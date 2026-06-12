@@ -2,13 +2,20 @@ name: Release APK
 
 # Builds the debug APK on a GitHub-hosted runner (which has the Android SDK and
 # can reach Google's Maven + the MMD artifact) and attaches it to a prerelease.
-# Triggered by pushing a tag like `v0.1.0-alpha`, or manually.
+#
+# Trigger either by pushing a tag like `v0.1.0-alpha`, or manually via the
+# "Run workflow" button / API, optionally overriding the `tag` input.
 
 on:
   push:
     tags:
       - "v*"
   workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to create for the prerelease"
+        required: true
+        default: "v0.1.0-alpha"
 
 permissions:
   contents: write
@@ -19,6 +26,15 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Resolve release tag
+        id: meta
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            echo "tag=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=${{ github.event.inputs.tag }}" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -34,30 +50,28 @@ jobs:
         run: ./gradlew :app:assembleDebug --stacktrace
 
       - name: Rename APK
-        if: success()
         run: |
           mkdir -p out
-          cp app/build/outputs/apk/debug/app-debug.apk "out/MindfulAnki-${GITHUB_REF_NAME}.apk"
+          cp app/build/outputs/apk/debug/app-debug.apk \
+            "out/MindfulAnki-${{ steps.meta.outputs.tag }}.apk"
 
-      # Always upload build output so logs/APK are retrievable even if the
-      # release step is skipped (e.g. manual run without a tag).
       - name: Upload APK artifact
-        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: mindfulanki-apk
           path: out/*.apk
 
       - name: Publish prerelease
-        if: success() && startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
           prerelease: true
-          name: "MindfulAnki ${{ github.ref_name }}"
+          tag_name: ${{ steps.meta.outputs.tag }}
+          target_commitish: ${{ github.sha }}
+          name: "MindfulAnki ${{ steps.meta.outputs.tag }}"
           files: out/*.apk
           body: |
             Automated prerelease build of the MindfulAnki debug APK.
 
             ⚠️ Unsigned debug build for sideloading/testing only. Install with
-            `adb install MindfulAnki-${{ github.ref_name }}.apk` or transfer to
-            the Mudita Kompakt and open it.
+            `adb install MindfulAnki-${{ steps.meta.outputs.tag }}.apk`, or
+            transfer it to the Mudita Kompakt and open it.
