@@ -18,8 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mindfulanki.data.db.DeckSummary
-import com.mudita.mmd.ButtonMMD
-import com.mudita.mmd.TextMMD
+import com.mudita.mmd.components.text.TextMMD
 
 /**
  * Decks the user has imported, with due/new counts, plus an "Import deck" action
@@ -51,11 +50,11 @@ fun DeckListScreen(
 
             ImportStatusLine(importState, viewModel::acknowledgeImport)
 
-            ButtonMMD(
+            LabeledButtonMMD(
                 text = "Import deck (.apkg)",
                 onClick = { picker.launch(arrayOf("*/*")) },
             )
-            ButtonMMD(text = "Stats", onClick = onOpenStats)
+            LabeledButtonMMD(text = "Stats", onClick = onOpenStats)
 
             HorizontalDivider()
 
@@ -93,11 +92,11 @@ private fun ImportStatusLine(state: ImportState, onAck: () -> Unit) {
         is ImportState.Done -> {
             val kind = if (state.modern) "modern" else "legacy"
             TextMMD(text = "Imported ${state.cardCount} cards into ${state.deckCount} deck(s) ($kind).")
-            ButtonMMD(text = "OK", onClick = onAck)
+            LabeledButtonMMD(text = "OK", onClick = onAck)
         }
         is ImportState.Failed -> {
             TextMMD(text = "Import failed: ${state.message}")
-            ButtonMMD(text = "Dismiss", onClick = onAck)
+            LabeledButtonMMD(text = "Dismiss", onClick = onAck)
         }
     }
 }

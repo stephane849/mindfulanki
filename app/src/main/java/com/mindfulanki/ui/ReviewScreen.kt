@@ -18,8 +18,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mindfulanki.core.fsrs.Rating
 import com.mindfulanki.data.db.CardEntity
-import com.mudita.mmd.ButtonMMD
-import com.mudita.mmd.TextMMD
+import com.mudita.mmd.components.text.TextMMD
 
 /**
  * The study flow: show the front, reveal the answer, then grade with the four
@@ -57,7 +56,7 @@ fun ReviewScreen(
                     if (state.answerShown) {
                         GradeButtons(onGrade = viewModel::grade)
                     } else {
-                        ButtonMMD(
+                        LabeledButtonMMD(
                             text = "Show answer",
                             onClick = viewModel::showAnswer,
                             modifier = Modifier.fillMaxWidth(),
@@ -89,12 +88,12 @@ private fun CardBody(card: CardEntity, answerShown: Boolean, modifier: Modifier 
 private fun GradeButtons(onGrade: (Rating) -> Unit) {
     // Order mirrors Anki: Again, Hard, Good, Easy.
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        ButtonMMD(text = "Again", onClick = { onGrade(Rating.AGAIN) }, modifier = Modifier.weight(1f))
-        ButtonMMD(text = "Hard", onClick = { onGrade(Rating.HARD) }, modifier = Modifier.weight(1f))
+        LabeledButtonMMD(text = "Again", onClick = { onGrade(Rating.AGAIN) }, modifier = Modifier.weight(1f))
+        LabeledButtonMMD(text = "Hard", onClick = { onGrade(Rating.HARD) }, modifier = Modifier.weight(1f))
     }
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        ButtonMMD(text = "Good", onClick = { onGrade(Rating.GOOD) }, modifier = Modifier.weight(1f))
-        ButtonMMD(text = "Easy", onClick = { onGrade(Rating.EASY) }, modifier = Modifier.weight(1f))
+        LabeledButtonMMD(text = "Good", onClick = { onGrade(Rating.GOOD) }, modifier = Modifier.weight(1f))
+        LabeledButtonMMD(text = "Easy", onClick = { onGrade(Rating.EASY) }, modifier = Modifier.weight(1f))
     }
 }
 
@@ -107,6 +106,6 @@ private fun SessionComplete(reviewed: Int, onDone: () -> Unit) {
     ) {
         TextMMD(text = "All done for now.")
         TextMMD(text = "Reviewed $reviewed card(s).")
-        ButtonMMD(text = "Back to decks", onClick = onDone)
+        LabeledButtonMMD(text = "Back to decks", onClick = onDone)
     }
 }

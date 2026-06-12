@@ -11,8 +11,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.mudita.mmd.ButtonMMD
-import com.mudita.mmd.TextMMD
+import com.mudita.mmd.components.text.TextMMD
 
 /** A light, glanceable summary — deliberately minimal for a mindful device. */
 @Composable
@@ -37,7 +36,7 @@ fun StatsScreen(
             TextMMD(text = "Decks: ${state.deckCount}")
             TextMMD(text = "Total cards: ${state.totalCards}")
             HorizontalDivider()
-            ButtonMMD(text = "Back", onClick = onBack)
+            LabeledButtonMMD(text = "Back", onClick = onBack)
         }
     }
 }
