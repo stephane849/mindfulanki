@@ -10,24 +10,29 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mudita.mmd.components.buttons.ButtonMMD
 import com.mudita.mmd.components.text.TextMMD
+import com.mudita.mmd.components.text_field.TextFieldMMD
 
 /**
  * Add or edit a card (front / back). Deck chips appear only in Add mode, per
@@ -64,9 +69,14 @@ fun AddEditScreen(
                         }
                     }
                 }
-                LabeledField("FRONT", state.front, viewModel::setFront)
-                LabeledField("BACK", state.back, viewModel::setBack)
-                state.confirm?.let { TextMMD(text = "✓  $it", fontSize = 14.sp, fontWeight = FontWeight.SemiBold) }
+                LabeledField("FRONT", state.front, viewModel::setFront, singleLine = true, imeAction = ImeAction.Next)
+                LabeledField("BACK", state.back, viewModel::setBack, singleLine = false, imeAction = ImeAction.Default)
+                state.confirm?.let { msg ->
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Icon(imageVector = CheckIcon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(18.dp))
+                        TextMMD(text = msg, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                    }
+                }
             }
             Box(Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 18.dp)) {
                 ButtonMMD(onClick = viewModel::save, enabled = state.canSave, modifier = Modifier.fillMaxWidth()) {
@@ -83,18 +93,22 @@ private fun FieldLabel(text: String) {
 }
 
 @Composable
-private fun LabeledField(label: String, value: String, onChange: (String) -> Unit) {
+private fun LabeledField(
+    label: String,
+    value: String,
+    onChange: (String) -> Unit,
+    singleLine: Boolean,
+    imeAction: ImeAction,
+) {
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         FieldLabel(label)
-        BasicTextField(
+        TextFieldMMD(
             value = value,
             onValueChange = onChange,
-            textStyle = TextStyle(fontSize = 17.sp, color = MaterialTheme.colorScheme.onSurface),
-            cursorBrush = androidx.compose.ui.graphics.SolidColor(MaterialTheme.colorScheme.onSurface),
-            modifier = Modifier
-                .fillMaxWidth()
-                .border(1.5.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(10.dp))
-                .padding(horizontal = 14.dp, vertical = 12.dp),
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = singleLine,
+            minLines = if (singleLine) 1 else 3,
+            keyboardOptions = KeyboardOptions(imeAction = imeAction),
         )
     }
 }

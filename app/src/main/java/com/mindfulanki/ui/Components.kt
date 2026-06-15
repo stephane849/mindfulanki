@@ -1,26 +1,27 @@
 package com.mindfulanki.ui
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mudita.mmd.components.buttons.ButtonMMD
+import com.mudita.mmd.components.divider.HorizontalDividerMMD
 import com.mudita.mmd.components.text.TextMMD
+import com.mudita.mmd.components.top_app_bar.TopAppBarMMD
 
 /**
  * Convenience wrapper around MMD's [ButtonMMD], which (like Material's Button)
@@ -33,54 +34,64 @@ fun LabeledButtonMMD(text: String, onClick: () -> Unit, modifier: Modifier = Mod
     }
 }
 
-/** A round, ripple-free icon button rendered from a glyph (E Ink friendly, no icon deps). */
+/**
+ * A ripple-free icon button. Uses real monochrome vector icons (not typographic
+ * glyphs): Space Grotesk lacks symbols like the gear/check, so glyphs would fall
+ * back inconsistently or render as tofu on minimal E Ink ROMs. 48dp tap target.
+ */
 @Composable
-fun GlyphIconButton(glyph: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun IconButton(
+    icon: ImageVector,
+    contentDescription: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     Box(
         modifier = modifier
-            .size(44.dp)
+            .size(48.dp)
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
-        TextMMD(text = glyph, fontSize = 22.sp)
+        Icon(
+            imageVector = icon,
+            contentDescription = contentDescription,
+            tint = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.size(26.dp),
+        )
     }
 }
 
-/** App bar: 56dp tall, optional back glyph, bold title, trailing slot. */
+/** App bar built on MMD's [TopAppBarMMD] so it inherits the framework's E Ink styling. */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TopBar(
     title: String,
+    navigationIcon: ImageVector? = null,
     onBack: (() -> Unit)? = null,
     actions: @Composable RowScope.() -> Unit = {},
 ) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(56.dp)
-            .padding(horizontal = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        if (onBack != null) GlyphIconButton(glyph = "←", onClick = onBack)
-        TextMMD(
-            text = title,
-            fontSize = 21.sp,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier
-                .weight(1f)
-                .padding(horizontal = 8.dp),
-        )
-        actions()
-    }
+    TopAppBarMMD(
+        title = { TextMMD(text = title, fontSize = 21.sp, fontWeight = FontWeight.Bold) },
+        navigationIcon = {
+            if (onBack != null) {
+                IconButton(
+                    icon = navigationIcon ?: BackIcon,
+                    contentDescription = "Back",
+                    onClick = onBack,
+                )
+            }
+        },
+        actions = actions,
+    )
 }
 
-/** Thin divider (1.5dp grey) or a strong 2dp ink rule, per the design tokens. */
+/** Thin grey rule, or a strong ink rule, rendered via MMD's [HorizontalDividerMMD]. */
 @Composable
 fun MindfulDivider(strong: Boolean = false, modifier: Modifier = Modifier) {
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(if (strong) 2.dp else 1.5.dp)
-            .background(if (strong) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.outlineVariant),
+    HorizontalDividerMMD(
+        modifier = modifier,
+        thickness = if (strong) 2.dp else 1.5.dp,
+        color = if (strong) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.outlineVariant,
     )
 }
 
@@ -99,7 +110,7 @@ private fun StepperButton(glyph: String, enabled: Boolean, onClick: () -> Unit) 
     val color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
     Box(
         modifier = Modifier
-            .size(38.dp)
+            .size(48.dp)
             .border(1.5.dp, color, CircleShape)
             .clickable(enabled = enabled, onClick = onClick),
         contentAlignment = Alignment.Center,

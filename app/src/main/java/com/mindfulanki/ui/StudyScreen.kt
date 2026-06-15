@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
@@ -33,13 +34,15 @@ import com.mindfulanki.core.fsrs.Rating
 import com.mindfulanki.data.settings.StudyVariant
 import com.mindfulanki.ui.theme.scriptFamily
 import com.mudita.mmd.components.buttons.ButtonMMD
+import com.mudita.mmd.components.progress_indicator.LinearProgressIndicatorMMD
 import com.mudita.mmd.components.text.TextMMD
 import kotlin.math.roundToInt
 
 /**
  * The study flow, in whichever of the three design layouts the user has chosen:
  * Classic (centered, big), Paper (document-like, tap to reveal), or Focus
- * (chrome-free, full-bleed). All monochrome and animation-free for E Ink.
+ * (chrome-free, full-bleed). All monochrome and animation-free for E Ink; the
+ * answer occupies a reserved region so revealing it doesn't reflow the front.
  */
 @Composable
 fun StudyScreen(
@@ -57,9 +60,9 @@ fun StudyScreen(
         else -> {
             val card = state.card!!
             when (settings.variant) {
-                StudyVariant.FOCUS -> FocusLayout(state, settings.showIntervals, viewModel::showAnswer, viewModel::grade, onDone)
-                StudyVariant.PAPER -> PaperLayout(state, settings.showIntervals, viewModel::showAnswer, viewModel::grade, onDone, { onEdit(card.id) })
-                StudyVariant.CLASSIC -> ClassicLayout(state, settings.showIntervals, viewModel::showAnswer, viewModel::grade, onDone, { onEdit(card.id) })
+                StudyVariant.FOCUS -> FocusLayout(state, settings.showIntervals, viewModel::showAnswer, viewModel::grade, viewModel::undo, onDone)
+                StudyVariant.PAPER -> PaperLayout(state, settings.showIntervals, viewModel::showAnswer, viewModel::grade, viewModel::undo, onDone, { onEdit(card.id) })
+                StudyVariant.CLASSIC -> ClassicLayout(state, settings.showIntervals, viewModel::showAnswer, viewModel::grade, viewModel::undo, onDone, { onEdit(card.id) })
             }
         }
     }
@@ -72,27 +75,32 @@ private fun ClassicLayout(
     showIntervals: Boolean,
     onReveal: () -> Unit,
     onGrade: (Rating) -> Unit,
+    onUndo: () -> Unit,
     onBack: () -> Unit,
     onEdit: () -> Unit,
 ) {
     val card = state.card!!
     Scaffold { padding ->
         Column(Modifier.fillMaxSize().padding(padding)) {
-            TopBar(title = state.deckName, onBack = onBack, actions = { EditButton(onEdit) })
+            TopBar(title = state.deckName, onBack = onBack, actions = { UndoButton(state.canUndo, onUndo); EditButton(onEdit) })
             StudyCounts(state)
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth()
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 28.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically),
+            // Front sits in the top half; the answer in a reserved lower half, so
+            // the question never moves when the answer appears.
+            Box(
+                modifier = Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 28.dp),
+                contentAlignment = Alignment.Center,
             ) {
                 TextMMD(text = card.front, fontSize = 44.sp, fontWeight = FontWeight.Medium, textAlign = TextAlign.Center, fontFamily = scriptFamily(card.front))
+            }
+            Box(
+                modifier = Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 28.dp),
+                contentAlignment = Alignment.TopCenter,
+            ) {
                 if (state.answerShown) {
-                    MindfulDivider(strong = true, modifier = Modifier.width(120.dp))
-                    TextMMD(text = card.back, fontSize = 26.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, fontFamily = scriptFamily(card.back))
+                    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        MindfulDivider(strong = true, modifier = Modifier.width(120.dp))
+                        TextMMD(text = card.back, fontSize = 26.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, fontFamily = scriptFamily(card.back))
+                    }
                 }
             }
             StudyBottom {
@@ -115,14 +123,17 @@ private fun PaperLayout(
     showIntervals: Boolean,
     onReveal: () -> Unit,
     onGrade: (Rating) -> Unit,
+    onUndo: () -> Unit,
     onBack: () -> Unit,
     onEdit: () -> Unit,
 ) {
     val card = state.card!!
     Scaffold { padding ->
         Column(Modifier.fillMaxSize().padding(padding)) {
-            TopBar(title = state.deckName, onBack = onBack, actions = { EditButton(onEdit) })
+            TopBar(title = state.deckName, onBack = onBack, actions = { UndoButton(state.canUndo, onUndo); EditButton(onEdit) })
             StudyCounts(state)
+            // Document flow: front stays anchored at the top; the answer reveals
+            // beneath it without moving the question.
             Column(
                 modifier = Modifier
                     .weight(1f)
@@ -138,7 +149,7 @@ private fun PaperLayout(
                 } else {
                     TextMMD(
                         text = "Tap the card to show the answer",
-                        fontSize = 13.5.sp,
+                        fontSize = 14.sp,
                         textAlign = TextAlign.Center,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.fillMaxWidth().padding(top = 24.dp),
@@ -165,33 +176,43 @@ private fun FocusLayout(
     showIntervals: Boolean,
     onReveal: () -> Unit,
     onGrade: (Rating) -> Unit,
+    onUndo: () -> Unit,
     onBack: () -> Unit,
 ) {
     val card = state.card!!
     Scaffold { padding ->
         Column(Modifier.fillMaxSize().padding(padding)) {
-            // Progress hairline + back affordance.
-            Box(Modifier.fillMaxWidth().height(3.dp).background(MaterialTheme.colorScheme.outlineVariant)) {
-                Box(Modifier.fillMaxWidth(state.progress).height(3.dp).background(MaterialTheme.colorScheme.onSurface))
+            // Progress hairline (MMD), plus back + undo affordances.
+            LinearProgressIndicatorMMD(
+                progress = { state.progress },
+                modifier = Modifier.fillMaxWidth().height(3.dp),
+            )
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                IconButton(icon = BackIcon, contentDescription = "Back", onClick = onBack)
+                Box(Modifier.weight(1f))
+                if (state.canUndo) IconButton(icon = UndoIcon, contentDescription = "Undo last grade", onClick = onUndo)
             }
-            Row(Modifier.fillMaxWidth()) { GlyphIconButton(glyph = "←", onClick = onBack) }
-            Column(
+            Box(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth()
                     .clickable(enabled = !state.answerShown, onClick = onReveal)
                     .verticalScroll(rememberScrollState())
                     .padding(horizontal = 28.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(14.dp, Alignment.CenterVertically),
+                contentAlignment = Alignment.Center,
             ) {
                 TextMMD(text = card.front, fontSize = 48.sp, fontWeight = FontWeight.Medium, textAlign = TextAlign.Center, fontFamily = scriptFamily(card.front))
+            }
+            Box(
+                modifier = Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 28.dp),
+                contentAlignment = Alignment.TopCenter,
+            ) {
                 if (state.answerShown) {
                     TextMMD(text = card.back, fontSize = 26.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, fontFamily = scriptFamily(card.back))
                 } else {
                     TextMMD(
                         text = "TAP TO REVEAL",
-                        fontSize = 12.5.sp,
+                        fontSize = 13.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -241,6 +262,12 @@ private fun EditButton(onEdit: () -> Unit) {
         textDecoration = TextDecoration.Underline,
         modifier = Modifier.clickable(onClick = onEdit).padding(10.dp),
     )
+}
+
+/** Undo affordance shown in the study chrome once a grade has been applied. */
+@Composable
+private fun UndoButton(canUndo: Boolean, onUndo: () -> Unit) {
+    if (canUndo) IconButton(icon = UndoIcon, contentDescription = "Undo last grade", onClick = onUndo)
 }
 
 private val GRADES = listOf(
@@ -306,16 +333,18 @@ private fun GradeButton(
     box = box.clickable(onClick = onClick)
 
     Box(box, contentAlignment = Alignment.Center) {
+        // Solid ink/paper for the interval rather than alpha-muted grey, which
+        // dithers poorly on E Ink.
         val interval = if (showIntervals && intervalDays != null) formatInterval(intervalDays) else null
         if (stacked) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                if (interval != null) TextMMD(text = interval, fontSize = 11.sp, color = fg.copy(alpha = 0.65f))
+                if (interval != null) TextMMD(text = interval, fontSize = 13.sp, color = fg)
                 TextMMD(text = label, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = fg)
             }
         } else {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                 TextMMD(text = label, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = fg)
-                if (interval != null) TextMMD(text = interval, fontSize = 11.sp, color = fg.copy(alpha = 0.65f))
+                if (interval != null) TextMMD(text = interval, fontSize = 13.sp, color = fg)
             }
         }
     }
@@ -336,7 +365,12 @@ private fun SessionDone(reviewed: Int, onDone: () -> Unit) {
                     .border(2.dp, MaterialTheme.colorScheme.onSurface, RoundedCornerShape(42.dp)),
                 contentAlignment = Alignment.Center,
             ) {
-                TextMMD(text = "✓", fontSize = 36.sp, fontWeight = FontWeight.Bold)
+                Icon(
+                    imageVector = CheckIcon,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.width(40.dp).height(40.dp),
+                )
             }
             TextMMD(text = "Session complete", fontSize = 24.sp, fontWeight = FontWeight.Bold)
             TextMMD(

@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
@@ -107,7 +108,7 @@ fun SettingsScreen(
 private fun SectionHeader(text: String) {
     TextMMD(
         text = text,
-        fontSize = 11.5.sp,
+        fontSize = 13.sp,
         fontWeight = FontWeight.SemiBold,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = Modifier.padding(start = 18.dp, end = 18.dp, top = 22.dp, bottom = 7.dp),
@@ -146,7 +147,14 @@ private fun LayoutOption(name: String, desc: String, selected: Boolean, onClick:
                 .border(1.5.dp, markColor, CircleShape),
             contentAlignment = Alignment.Center,
         ) {
-            if (selected) TextMMD(text = "✓", fontSize = 14.sp, color = MaterialTheme.colorScheme.surface)
+            if (selected) {
+                Icon(
+                    imageVector = CheckIcon,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.surface,
+                    modifier = Modifier.size(16.dp),
+                )
+            }
         }
         Column(Modifier.weight(1f)) {
             TextMMD(text = name, fontSize = 16.5.sp, fontWeight = FontWeight.Bold)
