@@ -13,4 +13,9 @@ data class AppSettings(
     val dailyGoal: Int = 20,
     val showIntervals: Boolean = true,
     val variant: StudyVariant = StudyVariant.CLASSIC,
-)
+    /** Percent scale applied to flashcard text (100 = design default). */
+    val textScalePercent: Int = 100,
+) {
+    /** Multiplier form of [textScalePercent] for sizing card text. */
+    val textScale: Float get() = textScalePercent / 100f
+}

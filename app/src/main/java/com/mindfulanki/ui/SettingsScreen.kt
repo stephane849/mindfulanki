@@ -58,6 +58,9 @@ fun SettingsScreen(
             SettingsRow("Inverted colors", "Light text on black, for night reading") {
                 SwitchMMD(checked = settings.invert, onCheckedChange = { viewModel.update(settings.copy(invert = it)) })
             }
+            SettingsRow("Text size", "${settings.textScalePercent}% of the flashcard text") {
+                Stepper(settings.textScalePercent, { viewModel.update(settings.copy(textScalePercent = it)) }, min = 80, max = 200, step = 10)
+            }
 
             SectionHeader("STUDY")
             MindfulDivider()

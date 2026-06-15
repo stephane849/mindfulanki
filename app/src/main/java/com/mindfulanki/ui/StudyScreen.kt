@@ -60,9 +60,9 @@ fun StudyScreen(
         else -> {
             val card = state.card!!
             when (settings.variant) {
-                StudyVariant.FOCUS -> FocusLayout(state, settings.showIntervals, viewModel::showAnswer, viewModel::grade, viewModel::undo, onDone)
-                StudyVariant.PAPER -> PaperLayout(state, settings.showIntervals, viewModel::showAnswer, viewModel::grade, viewModel::undo, onDone, { onEdit(card.id) })
-                StudyVariant.CLASSIC -> ClassicLayout(state, settings.showIntervals, viewModel::showAnswer, viewModel::grade, viewModel::undo, onDone, { onEdit(card.id) })
+                StudyVariant.FOCUS -> FocusLayout(state, settings.showIntervals, settings.textScale, viewModel::showAnswer, viewModel::grade, viewModel::undo, onDone)
+                StudyVariant.PAPER -> PaperLayout(state, settings.showIntervals, settings.textScale, viewModel::showAnswer, viewModel::grade, viewModel::undo, onDone, { onEdit(card.id) })
+                StudyVariant.CLASSIC -> ClassicLayout(state, settings.showIntervals, settings.textScale, viewModel::showAnswer, viewModel::grade, viewModel::undo, onDone, { onEdit(card.id) })
             }
         }
     }
@@ -73,6 +73,7 @@ fun StudyScreen(
 private fun ClassicLayout(
     state: ReviewUiState,
     showIntervals: Boolean,
+    textScale: Float,
     onReveal: () -> Unit,
     onGrade: (Rating) -> Unit,
     onUndo: () -> Unit,
@@ -90,7 +91,7 @@ private fun ClassicLayout(
                 modifier = Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 28.dp),
                 contentAlignment = Alignment.Center,
             ) {
-                TextMMD(text = card.front, fontSize = 44.sp, fontWeight = FontWeight.Medium, textAlign = TextAlign.Center, fontFamily = scriptFamily(card.front))
+                TextMMD(text = card.front, fontSize = (44 * textScale).sp, fontWeight = FontWeight.Medium, textAlign = TextAlign.Center, fontFamily = scriptFamily(card.front))
             }
             Box(
                 modifier = Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 28.dp),
@@ -99,7 +100,7 @@ private fun ClassicLayout(
                 if (state.answerShown) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         MindfulDivider(strong = true, modifier = Modifier.width(120.dp))
-                        TextMMD(text = card.back, fontSize = 26.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, fontFamily = scriptFamily(card.back))
+                        TextMMD(text = card.back, fontSize = (26 * textScale).sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, fontFamily = scriptFamily(card.back))
                     }
                 }
             }
@@ -121,6 +122,7 @@ private fun ClassicLayout(
 private fun PaperLayout(
     state: ReviewUiState,
     showIntervals: Boolean,
+    textScale: Float,
     onReveal: () -> Unit,
     onGrade: (Rating) -> Unit,
     onUndo: () -> Unit,
@@ -142,10 +144,10 @@ private fun PaperLayout(
                     .clickable(enabled = !state.answerShown, onClick = onReveal)
                     .padding(horizontal = 26.dp, vertical = 16.dp),
             ) {
-                TextMMD(text = card.front, fontSize = 30.sp, fontWeight = FontWeight.Medium, fontFamily = scriptFamily(card.front))
+                TextMMD(text = card.front, fontSize = (30 * textScale).sp, fontWeight = FontWeight.Medium, fontFamily = scriptFamily(card.front))
                 if (state.answerShown) {
                     MindfulDivider(strong = true, modifier = Modifier.padding(vertical = 20.dp))
-                    TextMMD(text = card.back, fontSize = 24.sp, fontWeight = FontWeight.Bold, fontFamily = scriptFamily(card.back))
+                    TextMMD(text = card.back, fontSize = (24 * textScale).sp, fontWeight = FontWeight.Bold, fontFamily = scriptFamily(card.back))
                 } else {
                     TextMMD(
                         text = "Tap the card to show the answer",
@@ -174,6 +176,7 @@ private fun PaperLayout(
 private fun FocusLayout(
     state: ReviewUiState,
     showIntervals: Boolean,
+    textScale: Float,
     onReveal: () -> Unit,
     onGrade: (Rating) -> Unit,
     onUndo: () -> Unit,
@@ -201,14 +204,14 @@ private fun FocusLayout(
                     .padding(horizontal = 28.dp),
                 contentAlignment = Alignment.Center,
             ) {
-                TextMMD(text = card.front, fontSize = 48.sp, fontWeight = FontWeight.Medium, textAlign = TextAlign.Center, fontFamily = scriptFamily(card.front))
+                TextMMD(text = card.front, fontSize = (48 * textScale).sp, fontWeight = FontWeight.Medium, textAlign = TextAlign.Center, fontFamily = scriptFamily(card.front))
             }
             Box(
                 modifier = Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 28.dp),
                 contentAlignment = Alignment.TopCenter,
             ) {
                 if (state.answerShown) {
-                    TextMMD(text = card.back, fontSize = 26.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, fontFamily = scriptFamily(card.back))
+                    TextMMD(text = card.back, fontSize = (26 * textScale).sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, fontFamily = scriptFamily(card.back))
                 } else {
                     TextMMD(
                         text = "TAP TO REVEAL",
