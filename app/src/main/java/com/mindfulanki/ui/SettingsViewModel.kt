@@ -3,29 +3,21 @@ package com.mindfulanki.ui
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.mindfulanki.data.ReviewRepository
 import com.mindfulanki.data.apkg.ApkgImportService
-import com.mindfulanki.data.db.DeckSummary
+import com.mindfulanki.data.settings.AppSettings
+import com.mindfulanki.data.settings.SettingsStore
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-sealed interface ImportState {
-    data object Idle : ImportState
-    data object Importing : ImportState
-    data class Done(val deckCount: Int, val cardCount: Int, val modern: Boolean) : ImportState
-    data class Failed(val message: String) : ImportState
-}
-
-class DeckListViewModel(
-    private val repository: ReviewRepository,
+class SettingsViewModel(
+    private val settingsStore: SettingsStore,
     private val importService: ApkgImportService,
 ) : ViewModel() {
 
-    val decks: StateFlow<List<DeckSummary>> = repository.observeDecks()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+    val settings: StateFlow<AppSettings> = settingsStore.settings
+
+    fun update(settings: AppSettings) = settingsStore.update(settings)
 
     private val _importState = MutableStateFlow<ImportState>(ImportState.Idle)
     val importState: StateFlow<ImportState> = _importState

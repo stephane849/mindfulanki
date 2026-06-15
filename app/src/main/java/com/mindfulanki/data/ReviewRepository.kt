@@ -5,6 +5,7 @@ import com.mindfulanki.core.fsrs.Rating
 import com.mindfulanki.core.fsrs.SchedulingState
 import com.mindfulanki.data.db.AppDatabase
 import com.mindfulanki.data.db.CardEntity
+import com.mindfulanki.data.db.DeckEntity
 import com.mindfulanki.data.db.DeckSummary
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -25,13 +26,42 @@ class ReviewRepository(
     fun observeDecks(now: Instant = Instant.now()): Flow<List<DeckSummary>> =
         deckDao.observeSummaries(now.toEpochMilli())
 
-    suspend fun dueQueue(deckId: Long, limit: Int = SESSION_LIMIT): List<CardEntity> =
+    /**
+     * The study queue for a session: due reviews first (soonest due first),
+     * then up to [newPerDay] never-seen cards — mirroring the design's
+     * learns → dues → news ordering.
+     */
+    suspend fun studyQueue(deckId: Long, newPerDay: Int): List<CardEntity> =
         withContext(Dispatchers.IO) {
-            cardDao.dueCards(deckId, Instant.now().toEpochMilli(), limit)
+            val now = Instant.now().toEpochMilli()
+            val due = cardDao.reviewDueCards(deckId, now, SESSION_LIMIT)
+            val new = if (newPerDay > 0) cardDao.newCards(deckId, newPerDay) else emptyList()
+            due + new
         }
 
     suspend fun dueCount(deckId: Long): Int = withContext(Dispatchers.IO) {
         cardDao.dueCount(deckId, Instant.now().toEpochMilli())
+    }
+
+    suspend fun decks(): List<DeckEntity> = withContext(Dispatchers.IO) { deckDao.decks() }
+
+    suspend fun card(id: Long): CardEntity? = withContext(Dispatchers.IO) { cardDao.getById(id) }
+
+    /** Create a new card in a deck, due immediately so it enters the new queue. */
+    suspend fun addCard(deckId: Long, front: String, back: String): Unit = withContext(Dispatchers.IO) {
+        cardDao.insert(
+            CardEntity(
+                deckId = deckId,
+                front = front,
+                back = back,
+                dueEpochMillis = Instant.now().toEpochMilli(),
+            ),
+        )
+    }
+
+    /** Update a card's text content, leaving its scheduling untouched. */
+    suspend fun updateContent(id: Long, front: String, back: String): Unit = withContext(Dispatchers.IO) {
+        cardDao.getById(id)?.let { cardDao.update(it.copy(front = front, back = back)) }
     }
 
     suspend fun reviewedToday(startOfDay: Instant): Int = withContext(Dispatchers.IO) {

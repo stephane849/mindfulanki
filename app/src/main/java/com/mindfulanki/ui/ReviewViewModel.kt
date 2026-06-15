@@ -14,24 +14,27 @@ data class ReviewUiState(
     val deckName: String = "",
     val card: CardEntity? = null,
     val answerShown: Boolean = false,
-    val remaining: Int = 0,
     val reviewed: Int = 0,
     val sessionTotal: Int = 0,
+    val newRemaining: Int = 0,
+    val dueRemaining: Int = 0,
     val previews: Map<Rating, Long> = emptyMap(),
 ) {
     val finished: Boolean get() = !loading && card == null
 
-    /** 1-based index of the card currently on screen, capped at the session size. */
-    val position: Int get() = (reviewed + if (card != null) 1 else 0).coerceAtMost(sessionTotal)
+    /** Whether the card on screen has never been reviewed (for the counts highlight). */
+    val currentIsNew: Boolean get() = card?.lastReviewEpochMillis == null
 
-    /** Fraction of the session completed, in [0, 1]. */
     val progress: Float
         get() = if (sessionTotal == 0) 0f else (reviewed.toFloat() / sessionTotal).coerceIn(0f, 1f)
+
+    val position: Int get() = (reviewed + if (card != null) 1 else 0).coerceAtMost(sessionTotal)
 }
 
 class ReviewViewModel(
     private val deckId: Long,
     private val repository: ReviewRepository,
+    private val newPerDay: Int,
 ) : ViewModel() {
 
     private val queue = ArrayDeque<CardEntity>()
@@ -44,25 +47,21 @@ class ReviewViewModel(
 
     private fun loadQueue() {
         viewModelScope.launch {
-            val cards = repository.dueQueue(deckId)
+            val cards = repository.studyQueue(deckId, newPerDay)
             queue.clear()
             queue.addAll(cards)
-            val first = queue.firstOrNull()
             _state.value = ReviewUiState(
                 loading = false,
                 deckName = repository.deckName(deckId) ?: "Deck",
-                card = first,
-                remaining = queue.size,
+                card = queue.firstOrNull(),
                 sessionTotal = cards.size,
-                previews = first?.let(repository::previewIntervals).orEmpty(),
-            )
+                previews = queue.firstOrNull()?.let(repository::previewIntervals).orEmpty(),
+            ).withCounts()
         }
     }
 
     fun showAnswer() {
-        if (_state.value.card != null) {
-            _state.value = _state.value.copy(answerShown = true)
-        }
+        if (_state.value.card != null) _state.value = _state.value.copy(answerShown = true)
     }
 
     fun grade(rating: Rating) {
@@ -77,10 +76,15 @@ class ReviewViewModel(
             _state.value = _state.value.copy(
                 card = next,
                 answerShown = false,
-                remaining = queue.size,
                 reviewed = _state.value.reviewed + 1,
                 previews = next?.let(repository::previewIntervals).orEmpty(),
-            )
+            ).withCounts()
         }
+    }
+
+    /** Recompute remaining new/due tallies from the live queue. */
+    private fun ReviewUiState.withCounts(): ReviewUiState {
+        val new = queue.count { it.lastReviewEpochMillis == null }
+        return copy(newRemaining = new, dueRemaining = queue.size - new)
     }
 }
