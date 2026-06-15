@@ -40,6 +40,9 @@ interface DeckDao {
         """,
     )
     fun observeSummaries(now: Long): Flow<List<DeckSummary>>
+
+    @Query("SELECT name FROM decks WHERE id = :id")
+    suspend fun deckName(id: Long): String?
 }
 
 @Dao

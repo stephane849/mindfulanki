@@ -11,12 +11,22 @@ import kotlinx.coroutines.launch
 
 data class ReviewUiState(
     val loading: Boolean = true,
+    val deckName: String = "",
     val card: CardEntity? = null,
     val answerShown: Boolean = false,
     val remaining: Int = 0,
     val reviewed: Int = 0,
+    val sessionTotal: Int = 0,
+    val previews: Map<Rating, Long> = emptyMap(),
 ) {
     val finished: Boolean get() = !loading && card == null
+
+    /** 1-based index of the card currently on screen, capped at the session size. */
+    val position: Int get() = (reviewed + if (card != null) 1 else 0).coerceAtMost(sessionTotal)
+
+    /** Fraction of the session completed, in [0, 1]. */
+    val progress: Float
+        get() = if (sessionTotal == 0) 0f else (reviewed.toFloat() / sessionTotal).coerceIn(0f, 1f)
 }
 
 class ReviewViewModel(
@@ -34,12 +44,17 @@ class ReviewViewModel(
 
     private fun loadQueue() {
         viewModelScope.launch {
+            val cards = repository.dueQueue(deckId)
             queue.clear()
-            queue.addAll(repository.dueQueue(deckId))
+            queue.addAll(cards)
+            val first = queue.firstOrNull()
             _state.value = ReviewUiState(
                 loading = false,
-                card = queue.firstOrNull(),
+                deckName = repository.deckName(deckId) ?: "Deck",
+                card = first,
                 remaining = queue.size,
+                sessionTotal = cards.size,
+                previews = first?.let(repository::previewIntervals).orEmpty(),
             )
         }
     }
@@ -64,6 +79,7 @@ class ReviewViewModel(
                 answerShown = false,
                 remaining = queue.size,
                 reviewed = _state.value.reviewed + 1,
+                previews = next?.let(repository::previewIntervals).orEmpty(),
             )
         }
     }

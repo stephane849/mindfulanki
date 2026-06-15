@@ -38,6 +38,22 @@ class ReviewRepository(
         cardDao.reviewedSince(startOfDay.toEpochMilli())
     }
 
+    suspend fun deckName(deckId: Long): String? = withContext(Dispatchers.IO) {
+        deckDao.deckName(deckId)
+    }
+
+    /**
+     * The next interval (in whole days) each grade would schedule for [card],
+     * without persisting anything. Used to label the grade buttons, like Anki.
+     * Pure/in-memory — no DB access.
+     */
+    fun previewIntervals(card: CardEntity, now: Instant = Instant.now()): Map<Rating, Long> {
+        val state = card.toSchedulingState()
+        return Rating.values().associateWith { rating ->
+            fsrs.intervalDays(fsrs.review(state, rating, now))
+        }
+    }
+
     /** Apply a [rating] to a card, persisting its next FSRS state. */
     suspend fun grade(card: CardEntity, rating: Rating, now: Instant = Instant.now()): CardEntity =
         withContext(Dispatchers.IO) {
