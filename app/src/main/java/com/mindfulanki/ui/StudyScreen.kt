@@ -207,7 +207,8 @@ private fun FocusLayout(
 private fun StudyCounts(state: ReviewUiState) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
-        horizontalArrangement = Arrangement.spacedBy(18.dp, Alignment.CenterVertically),
+        horizontalArrangement = Arrangement.spacedBy(18.dp, Alignment.CenterHorizontally),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         CountItem("${state.newRemaining} new", active = state.currentIsNew)
         CountItem("${state.dueRemaining} due", active = !state.currentIsNew)
