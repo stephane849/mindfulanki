@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mindfulanki.core.fsrs.Rating
 import com.mindfulanki.data.settings.StudyVariant
+import com.mindfulanki.ui.theme.scriptFamily
 import com.mudita.mmd.components.buttons.ButtonMMD
 import com.mudita.mmd.components.text.TextMMD
 import kotlin.math.roundToInt
@@ -88,10 +89,10 @@ private fun ClassicLayout(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically),
             ) {
-                TextMMD(text = card.front, fontSize = 44.sp, fontWeight = FontWeight.Medium, textAlign = TextAlign.Center)
+                TextMMD(text = card.front, fontSize = 44.sp, fontWeight = FontWeight.Medium, textAlign = TextAlign.Center, fontFamily = scriptFamily(card.front))
                 if (state.answerShown) {
                     MindfulDivider(strong = true, modifier = Modifier.width(120.dp))
-                    TextMMD(text = card.back, fontSize = 26.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
+                    TextMMD(text = card.back, fontSize = 26.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, fontFamily = scriptFamily(card.back))
                 }
             }
             StudyBottom {
@@ -130,10 +131,10 @@ private fun PaperLayout(
                     .clickable(enabled = !state.answerShown, onClick = onReveal)
                     .padding(horizontal = 26.dp, vertical = 16.dp),
             ) {
-                TextMMD(text = card.front, fontSize = 30.sp, fontWeight = FontWeight.Medium)
+                TextMMD(text = card.front, fontSize = 30.sp, fontWeight = FontWeight.Medium, fontFamily = scriptFamily(card.front))
                 if (state.answerShown) {
                     MindfulDivider(strong = true, modifier = Modifier.padding(vertical = 20.dp))
-                    TextMMD(text = card.back, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                    TextMMD(text = card.back, fontSize = 24.sp, fontWeight = FontWeight.Bold, fontFamily = scriptFamily(card.back))
                 } else {
                     TextMMD(
                         text = "Tap the card to show the answer",
@@ -184,9 +185,9 @@ private fun FocusLayout(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(14.dp, Alignment.CenterVertically),
             ) {
-                TextMMD(text = card.front, fontSize = 48.sp, fontWeight = FontWeight.Medium, textAlign = TextAlign.Center)
+                TextMMD(text = card.front, fontSize = 48.sp, fontWeight = FontWeight.Medium, textAlign = TextAlign.Center, fontFamily = scriptFamily(card.front))
                 if (state.answerShown) {
-                    TextMMD(text = card.back, fontSize = 26.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
+                    TextMMD(text = card.back, fontSize = 26.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, fontFamily = scriptFamily(card.back))
                 } else {
                     TextMMD(
                         text = "TAP TO REVEAL",

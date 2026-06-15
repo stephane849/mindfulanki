@@ -64,6 +64,16 @@ adb install app/build/outputs/apk/debug/app-debug.apk
 > tweaking against the released artifact; they are isolated in `ui/theme/Theme.kt`
 > and the screen composables.
 
+## Fonts
+
+The app bundles the design's typefaces (both SIL Open Font License 1.1):
+
+- **Space Grotesk** (variable) — primary UI type. `app/src/main/res/font/space_grotesk.ttf`
+- **Scheherazade New** (Regular/Medium/SemiBold/Bold) — Arabic card content, auto-selected
+  for Arabic-script text via `scriptFamily()`.
+
+License texts are in `licenses/fonts/`.
+
 ## Getting a compatible deck
 
 In Anki desktop: **File → Export**, choose **Anki Deck Package (.apkg)**. Either

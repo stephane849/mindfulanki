@@ -59,7 +59,10 @@ private val InvertedScheme: ColorScheme = darkColorScheme(
  */
 @Composable
 fun MindfulAnkiTheme(inverted: Boolean = false, content: @Composable () -> Unit) {
-    ThemeMMD(colorScheme = if (inverted) InvertedScheme else LightScheme) {
+    ThemeMMD(
+        colorScheme = if (inverted) InvertedScheme else LightScheme,
+        typography = AppTypography,
+    ) {
         content()
     }
 }
