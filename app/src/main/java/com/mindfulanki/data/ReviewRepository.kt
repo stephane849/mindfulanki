@@ -35,7 +35,7 @@ class ReviewRepository(
         withContext(Dispatchers.IO) {
             val now = Instant.now().toEpochMilli()
             val due = cardDao.reviewDueCards(deckId, now, SESSION_LIMIT)
-            val new = if (newPerDay > 0) cardDao.newCards(deckId, newPerDay) else emptyList()
+            val new = if (newPerDay > 0) cardDao.newCards(deckId, newPerDay).shuffled() else emptyList()
             due + new
         }
 
