@@ -35,7 +35,7 @@ class ReviewRepository(
         withContext(Dispatchers.IO) {
             val now = Instant.now().toEpochMilli()
             val due = cardDao.reviewDueCards(deckId, now, SESSION_LIMIT)
-            val new = if (newPerDay > 0) cardDao.newCards(deckId, newPerDay) else emptyList()
+            val new = if (newPerDay > 0) cardDao.newCards(deckId, newPerDay).shuffled() else emptyList()
             due + new
         }
 
@@ -92,6 +92,11 @@ class ReviewRepository(
             cardDao.update(updated)
             updated
         }
+
+    /** Re-persist a card to a prior state — used to undo the last grade. */
+    suspend fun restore(card: CardEntity): Unit = withContext(Dispatchers.IO) {
+        cardDao.update(card)
+    }
 
     private fun CardEntity.toSchedulingState(): SchedulingState = SchedulingState(
         stability = stability,

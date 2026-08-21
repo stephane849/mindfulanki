@@ -19,6 +19,7 @@ data class ReviewUiState(
     val newRemaining: Int = 0,
     val dueRemaining: Int = 0,
     val previews: Map<Rating, Long> = emptyMap(),
+    val canUndo: Boolean = false,
 ) {
     val finished: Boolean get() = !loading && card == null
 
@@ -40,6 +41,14 @@ class ReviewViewModel(
     private val queue = ArrayDeque<CardEntity>()
     private val _state = MutableStateFlow(ReviewUiState())
     val state: StateFlow<ReviewUiState> = _state
+
+    /** Snapshot of the last grade so it can be reversed (one step). */
+    private data class UndoSnapshot(
+        val card: CardEntity,
+        val requeued: Boolean,
+        val previews: Map<Rating, Long>,
+    )
+    private var undoSnapshot: UndoSnapshot? = null
 
     init {
         loadQueue()
@@ -66,18 +75,44 @@ class ReviewViewModel(
 
     fun grade(rating: Rating) {
         val current = _state.value.card ?: return
+        val priorPreviews = _state.value.previews
         viewModelScope.launch {
-            repository.grade(current, rating)
+            val graded = repository.grade(current, rating)
             queue.removeFirstOrNull()
-            // A lapsed card is re-queued for another pass this session.
-            if (rating == Rating.AGAIN) queue.addLast(current)
+            // A lapsed card is re-queued for another pass this session; re-queue the
+            // *graded* entity so its preview reflects the new state, and grow the
+            // session total so progress stays honest.
+            val requeued = rating == Rating.AGAIN
+            if (requeued) queue.addLast(graded)
+            undoSnapshot = UndoSnapshot(current, requeued, priorPreviews)
 
             val next = queue.firstOrNull()
             _state.value = _state.value.copy(
                 card = next,
                 answerShown = false,
                 reviewed = _state.value.reviewed + 1,
+                sessionTotal = _state.value.sessionTotal + if (requeued) 1 else 0,
                 previews = next?.let(repository::previewIntervals).orEmpty(),
+                canUndo = true,
+            ).withCounts()
+        }
+    }
+
+    /** Reverse the last grade: restore the card's scheduling and re-show it. */
+    fun undo() {
+        val snap = undoSnapshot ?: return
+        viewModelScope.launch {
+            repository.restore(snap.card)
+            if (snap.requeued) queue.removeLastOrNull()
+            queue.addFirst(snap.card)
+            undoSnapshot = null
+            _state.value = _state.value.copy(
+                card = snap.card,
+                answerShown = true,
+                reviewed = (_state.value.reviewed - 1).coerceAtLeast(0),
+                sessionTotal = _state.value.sessionTotal - if (snap.requeued) 1 else 0,
+                previews = snap.previews,
+                canUndo = false,
             ).withCounts()
         }
     }

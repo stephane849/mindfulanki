@@ -1,6 +1,7 @@
 package com.mindfulanki.ui.theme
 
 import androidx.compose.material3.Typography
+import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontVariation
@@ -8,6 +9,7 @@ import androidx.compose.ui.text.font.FontWeight
 import com.mindfulanki.R
 
 /** Space Grotesk is shipped as a single variable font; bind weights via the wght axis. */
+@OptIn(ExperimentalTextApi::class)
 private fun spaceGrotesk(weight: Int) = Font(
     resId = R.font.space_grotesk,
     weight = FontWeight(weight),

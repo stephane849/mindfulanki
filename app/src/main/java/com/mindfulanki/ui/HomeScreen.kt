@@ -13,9 +13,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
@@ -56,8 +58,8 @@ fun HomeScreen(
             TopBar(
                 title = "Anki",
                 actions = {
-                    GlyphIconButton(glyph = "+", onClick = onAdd)
-                    GlyphIconButton(glyph = "⚙", onClick = onSettings)
+                    IconButton(icon = AddIcon, contentDescription = "Add card", onClick = onAdd)
+                    IconButton(icon = SettingsIcon, contentDescription = "Settings", onClick = onSettings)
                 },
             )
 
@@ -75,6 +77,23 @@ fun HomeScreen(
                         MindfulDivider()
                     }
                     item {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { picker.launch(arrayOf("*/*")) }
+                                .padding(horizontal = 18.dp, vertical = 16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        ) {
+                            Icon(
+                                imageVector = AddIcon,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.size(22.dp),
+                            )
+                            TextMMD(text = "Import deck (.apkg)", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                        }
+                        MindfulDivider()
                         MutedText(
                             "Cards return just before you forget them. Study a little, then put the phone down.",
                             modifier = Modifier.padding(18.dp),
@@ -97,7 +116,7 @@ private fun DailyGoal(todayCount: Int, goal: Int) {
         ) {
             TextMMD(
                 text = "TODAY",
-                fontSize = 12.5.sp,
+                fontSize = 13.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -144,7 +163,12 @@ private fun DeckRowItem(deck: DeckRow, onClick: () -> Unit) {
             TextMMD(text = deck.subtitle, fontSize = 13.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         if (deck.done) {
-            TextMMD(text = "✓", fontSize = 22.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Icon(
+                imageVector = CheckIcon,
+                contentDescription = "Done for today",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(24.dp),
+            )
         } else {
             TextMMD(text = deck.badge.toString(), fontSize = 22.sp, fontWeight = FontWeight.Bold)
         }

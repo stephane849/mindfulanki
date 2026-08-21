@@ -21,6 +21,7 @@ class SettingsStore(context: Context) {
             .putInt(KEY_DAILY_GOAL, settings.dailyGoal)
             .putBoolean(KEY_SHOW_INTERVALS, settings.showIntervals)
             .putString(KEY_VARIANT, settings.variant.name)
+            .putInt(KEY_TEXT_SCALE, settings.textScalePercent)
             .apply()
         _settings.value = settings
     }
@@ -34,6 +35,7 @@ class SettingsStore(context: Context) {
             showIntervals = prefs.getBoolean(KEY_SHOW_INTERVALS, defaults.showIntervals),
             variant = runCatching { StudyVariant.valueOf(prefs.getString(KEY_VARIANT, defaults.variant.name)!!) }
                 .getOrDefault(defaults.variant),
+            textScalePercent = prefs.getInt(KEY_TEXT_SCALE, defaults.textScalePercent),
         )
     }
 
@@ -43,5 +45,6 @@ class SettingsStore(context: Context) {
         const val KEY_DAILY_GOAL = "daily_goal"
         const val KEY_SHOW_INTERVALS = "show_intervals"
         const val KEY_VARIANT = "variant"
+        const val KEY_TEXT_SCALE = "text_scale_percent"
     }
 }
